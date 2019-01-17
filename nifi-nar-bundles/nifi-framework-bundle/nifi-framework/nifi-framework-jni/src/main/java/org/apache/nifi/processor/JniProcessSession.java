@@ -8,8 +8,7 @@ import org.apache.nifi.processor.io.OutputStreamCallback;
 import org.apache.nifi.processor.io.StreamCallback;
 import org.apache.nifi.provenance.ProvenanceReporter;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -101,6 +100,7 @@ public class JniProcessSession implements ProcessSession {
         for(Map.Entry<String,String> entry : attributes.entrySet()){
             putAttribute(flowFile,entry.getKey(),entry.getValue());
         }
+        System.out.println("Flow file is null ? " + (flowFile==null));
         return flowFile;
     }
 
@@ -120,7 +120,11 @@ public class JniProcessSession implements ProcessSession {
     }
 
     @Override
-    public native void transfer(FlowFile flowFile, Relationship relationship);
+    public void transfer(FlowFile flowFile, Relationship relationship){
+        transfer(flowFile,relationship.getName());
+    }
+
+    protected native void transfer(FlowFile flowFile, String relationship);
 
     @Override
     public void transfer(FlowFile flowFile) {
@@ -134,7 +138,9 @@ public class JniProcessSession implements ProcessSession {
 
     @Override
     public void transfer(Collection<FlowFile> flowFiles, Relationship relationship) {
-
+        for(FlowFile flowFile : flowFiles){
+            transfer(flowFile,relationship.getName());
+        }
     }
 
     @Override
@@ -174,8 +180,19 @@ public class JniProcessSession implements ProcessSession {
 
     @Override
     public FlowFile write(FlowFile source, OutputStreamCallback writer) throws FlowFileAccessException {
-        return null;
+        // must write data.
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try {
+            writer.process(bos);
+        }catch(IOException os){
+            throw new FlowFileAccessException("IOException while processing ff data");
+        }
+        write(source, bos.toByteArray());
+
+        return source;
     }
+
+    protected native boolean write(FlowFile source, byte [] array);
 
     @Override
     public OutputStream write(FlowFile source) {

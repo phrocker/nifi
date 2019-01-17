@@ -8,6 +8,9 @@ public class JniFlowFile implements FlowFile {
 
     private long nativePtr;
 
+    public JniFlowFile(){
+    }
+
     @Override
     public native long getId();
 
