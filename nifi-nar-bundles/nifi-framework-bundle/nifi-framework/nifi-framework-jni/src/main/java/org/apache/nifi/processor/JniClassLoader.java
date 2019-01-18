@@ -1,14 +1,13 @@
 package org.apache.nifi.processor;
 
+import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.nar.NarClassLoader;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class JniClassLoader  {
@@ -20,7 +19,7 @@ public class JniClassLoader  {
 
     private ConcurrentHashMap<String,Class<?>> classes = new ConcurrentHashMap<>();
 
-    private ConcurrentHashMap<String,Class<?>> onScheduledMethod = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Map.Entry<String,String>,Method> onScheduledMethod = new ConcurrentHashMap<>();
 
 
     public JniClassLoader(){
@@ -35,21 +34,27 @@ public class JniClassLoader  {
         return loader.loadClass(className);
     }
 
-    public static List<Method> getMethodsAnnotatedWith(final Class<?> type, final Class<? extends Annotation> annotation) {
+    public static List<Method> getAnnotatedMethods(final Class<?> type, final Class<? extends Annotation> annotation) {
         final List<Method> methods = new ArrayList<Method>();
         Class<?> klass = type;
-        while (klass != Object.class) { // need to iterated thought hierarchy in order to retrieve methods from above the current instance
-            // iterate though the list of methods declared in the class represented by klass variable, and add those annotated with the specified annotation
-
+        while (klass != Object.class) {
             for (final Method method : klass.getDeclaredMethods()) {
                 if (method.isAnnotationPresent(annotation)) {
                     methods.add(method);
                 }
             }
-            // move to the upper class in the hierarchy in search for more methods
-            klass = klass.getSuperclass();
+            if (methods.isEmpty())
+                klass = klass.getSuperclass();
+            else
+                break;
         }
         return methods;
+    }
+
+
+    public String getMethod(final String className, final String annotation){
+        System.out.println(onScheduledMethod.get(new AbstractMap.SimpleImmutableEntry<>(className,annotation)).getName());
+        return onScheduledMethod.get(new AbstractMap.SimpleImmutableEntry<>(className,annotation)).toString();
     }
 
     public Object createObject(final String className) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
@@ -63,6 +68,10 @@ public class JniClassLoader  {
             System.out.println("Could not find " + className);
         }
         else{
+            List<Method> methods = getAnnotatedMethods(clazz, OnScheduled.class);
+            methods.stream().forEach(mthd -> {
+                onScheduledMethod.put(new AbstractMap.SimpleImmutableEntry<>(className,"OnScheduled"),mthd);
+            });
             System.out.println("Found " + clazz.getCanonicalName());
             System.out.println("can create? " +  clazz.newInstance() == null);
         }
