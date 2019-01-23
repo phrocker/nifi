@@ -138,8 +138,9 @@ public class JniProcessContext implements ProcessContext, ControllerServiceLooku
     public PropertyValue getProperty(PropertyDescriptor descriptor) {
         String value = getPropertyValue(descriptor.getName());
         System.out.println("Get property for " + descriptor.getName() + " " + value);
-        if (value == null)
+        if (value == null || "null".equals(value))
             value = descriptor.getDefaultValue();
+        System.out.println("Get property for " + descriptor.getName() + " " + value);
         return new StandardPropertyValue(value,this);
     }
 

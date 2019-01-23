@@ -160,7 +160,7 @@ public class JniProcessSession implements ProcessSession {
 
     @Override
     public InputStream read(FlowFile flowFile) {
-        return null;
+        return new ByteArrayInputStream(readFlowFile(flowFile));
     }
 
     @Override
@@ -192,6 +192,8 @@ public class JniProcessSession implements ProcessSession {
         return source;
     }
 
+    protected native byte[] readFlowFile(FlowFile source);
+
     protected native boolean write(FlowFile source, byte [] array);
 
     @Override
@@ -201,7 +203,16 @@ public class JniProcessSession implements ProcessSession {
 
     @Override
     public FlowFile write(FlowFile source, StreamCallback writer) throws FlowFileAccessException {
-        return null;
+        // must write data.
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try {
+            writer.process(read(source),bos);
+        }catch(IOException os){
+            throw new FlowFileAccessException("IOException while processing ff data");
+        }
+        write(source, bos.toByteArray());
+
+        return source;
     }
 
     @Override
