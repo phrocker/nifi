@@ -100,7 +100,6 @@ public class JniProcessSession implements ProcessSession {
         for(Map.Entry<String,String> entry : attributes.entrySet()){
             putAttribute(flowFile,entry.getKey(),entry.getValue());
         }
-        System.out.println("Flow file is null ? " + (flowFile==null));
         return flowFile;
     }
 

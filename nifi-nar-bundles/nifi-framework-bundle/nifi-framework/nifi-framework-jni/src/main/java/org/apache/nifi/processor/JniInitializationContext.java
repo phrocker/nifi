@@ -15,7 +15,6 @@ public class JniInitializationContext implements ProcessorInitializationContext 
 
     @Override
     public ComponentLog getLogger() {
-System.out.println("get log!");
         return new JniComponentLogger();
     }
 
