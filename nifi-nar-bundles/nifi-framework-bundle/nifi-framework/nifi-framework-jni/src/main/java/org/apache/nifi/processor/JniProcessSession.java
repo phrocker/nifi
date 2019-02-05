@@ -78,9 +78,7 @@ public class JniProcessSession implements ProcessSession {
     }
 
     @Override
-    public FlowFile clone(FlowFile example) {
-        return null;
-    }
+    public native FlowFile clone(FlowFile example);
 
     @Override
     public FlowFile clone(FlowFile parent, long offset, long size) {

@@ -5,12 +5,13 @@ import org.apache.nifi.bundle.Bundle;
 import org.apache.nifi.bundle.BundleDetails;
 import org.apache.nifi.components.ConfigurableComponent;
 import org.apache.nifi.components.PropertyDescriptor;
-import org.apache.nifi.controller.ControllerService;
 import org.apache.nifi.init.ConfigurableComponentInitializer;
 import org.apache.nifi.init.ConfigurableComponentInitializerFactory;
-import org.apache.nifi.nar.*;
+import org.apache.nifi.nar.ExtensionMapping;
+import org.apache.nifi.nar.JniUnpacker;
+import org.apache.nifi.nar.NarBundleUtil;
+import org.apache.nifi.nar.NarClassLoader;
 import org.apache.nifi.reporting.InitializationException;
-import org.apache.nifi.reporting.ReportingTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,7 +127,7 @@ public class JniClassLoader  {
                         final Processor processor = Processor.class.cast(configurableComponent);
                         if (processor != null) {
                             List<PropertyDescriptor> descriptors = processor.getPropertyDescriptors();
-                            components.add(JniComponent.JniComponentBuilder.create(processor.getClass().getCanonicalName()).addProperties(descriptors).build());
+                            components.add(JniComponent.JniComponentBuilder.create(processor.getClass().getCanonicalName()).addProperties(descriptors).addRelationships(processor.getRelationships()).build());
 
                         }
 

@@ -2,29 +2,25 @@ package org.apache.nifi.processor;
 
 import org.apache.nifi.components.PropertyDescriptor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class JniComponent {
     private String type;
+    private String description;
     private List<PropertyDescriptor> descriptorsList;
+    private Set<Relationship> relationships;
     private boolean dynamicProperties;
     private boolean dynamicRelationships;
 
     private JniComponent(final String type){
         this.type = type;
         this.descriptorsList = new ArrayList<>();
+        this.relationships = new HashSet<>();
         this.dynamicProperties = false;
         this.dynamicRelationships = false;
     }
 
-    private JniComponent(final String type,final List<PropertyDescriptor> descriptorsList, final boolean dynamicProperties, final boolean dynamicRelationships){
-        this.type = type;
-        this.descriptorsList = new ArrayList<>(descriptorsList);
-        this.dynamicProperties = dynamicProperties;
-        this.dynamicRelationships = dynamicRelationships;
-    }
 
     public String getType(){
         return type;
@@ -32,6 +28,16 @@ public class JniComponent {
 
     public List<PropertyDescriptor> getDescriptors(){
         return Collections.unmodifiableList(descriptorsList);
+    }
+
+
+    /**
+     * Return a list of relationshipos. internally we capture this as a set, but converting this
+     * to a list enables us to access this easier in JNI.
+     * @return
+     */
+    public List<Relationship> getRelationships(){
+        return Collections.unmodifiableList(relationships.stream().collect(Collectors.toList()));
     }
 
     public boolean getDynamicRelationshipsSupported(){
@@ -56,6 +62,11 @@ public class JniComponent {
 
         public JniComponentBuilder addProperties(final List<PropertyDescriptor> descriptorsList){
             component.descriptorsList.addAll(descriptorsList);
+            return this;
+        }
+
+        public JniComponentBuilder addRelationships(final Set<Relationship> relationships){
+            component.relationships.addAll(relationships);
             return this;
         }
 
