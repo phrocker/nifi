@@ -10,11 +10,9 @@ import org.apache.nifi.provenance.ProvenanceReporter;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 public class JniProcessSession implements ProcessSession {
 
@@ -51,7 +49,14 @@ public class JniProcessSession implements ProcessSession {
 
     @Override
     public List<FlowFile> get(int maxResults) {
-        return null;
+        List<FlowFile> flowfiles = new ArrayList<>();
+        FlowFile ff = get();
+        int i=0;
+        while(ff != null && i++ < maxResults){
+            flowfiles.add(ff);
+            ff = get();
+        }
+        return flowfiles;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package org.apache.nifi.processor;
 
+import org.apache.nifi.annotation.behavior.DynamicProperty;
+import org.apache.nifi.annotation.behavior.DynamicRelationship;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.bundle.Bundle;
@@ -129,7 +131,16 @@ public class JniClassLoader  {
                         if (processor != null) {
                             List<PropertyDescriptor> descriptors = processor.getPropertyDescriptors();
                             final String description = getDescription(processor.getClass());
-                            components.add(JniComponent.JniComponentBuilder.create(processor.getClass().getCanonicalName()).addProperties(descriptors).addDescription(description).addRelationships(processor.getRelationships()).build());
+                            final DynamicProperty dynProperty = getDynamicPropertyAnnotation(processor.getClass());
+                            final DynamicRelationship dynRelationShip = getDynamicRelationshipAnnotation(processor.getClass());
+                            JniComponent.JniComponentBuilder builder = JniComponent.JniComponentBuilder.create(processor.getClass().getCanonicalName()).addProperties(descriptors).addDescription(description).addRelationships(processor.getRelationships());
+                            if (dynProperty != null){
+                                builder.setDynamicProperties();
+                            }
+                            if (dynRelationShip != null){
+                                builder.setDynamicRelationships();
+                            }
+                            components.add(builder.build());
                         }
 
                 }
@@ -147,6 +158,16 @@ public class JniClassLoader  {
     private static String getDescription(final Class<?> cls) {
         final CapabilityDescription capabilityDesc = cls.getAnnotation(CapabilityDescription.class);
         return capabilityDesc == null ? "" : capabilityDesc.value();
+    }
+
+    private static DynamicProperty getDynamicPropertyAnnotation(final Class<?> cls) {
+        final DynamicProperty dynProperty = cls.getAnnotation(DynamicProperty.class);
+        return dynProperty;
+    }
+
+    private static DynamicRelationship getDynamicRelationshipAnnotation(final Class<?> cls) {
+        final DynamicRelationship dynamicRelationship = cls.getAnnotation(DynamicRelationship.class);
+        return dynamicRelationship;
     }
 
     private static void initializeTempComponent(final ConfigurableComponent configurableComponent) {

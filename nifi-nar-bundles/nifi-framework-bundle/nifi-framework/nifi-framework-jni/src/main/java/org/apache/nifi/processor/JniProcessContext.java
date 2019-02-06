@@ -80,6 +80,7 @@ public class JniProcessContext implements ProcessContext, ControllerServiceLooku
     @Override
     public Map<PropertyDescriptor, String> getProperties() {
         Map<PropertyDescriptor, String> props = new HashMap<>();
+
         return props;
         //return null;
     }
@@ -146,6 +147,13 @@ public class JniProcessContext implements ProcessContext, ControllerServiceLooku
 
     @Override
     public Map<String, String> getAllProperties() {
-        return null;
+        Map<PropertyDescriptor, String> map = getProperties();
+        Map<String,String> newProps = new HashMap<>();
+        map.forEach((x,y) ->
+        {
+           newProps.put(x.getName(),y);
+        });
+        return newProps;
+
     }
 }
