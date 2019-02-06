@@ -1,5 +1,6 @@
 package org.apache.nifi.processor;
 
+import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.bundle.Bundle;
 import org.apache.nifi.bundle.BundleDetails;
@@ -127,8 +128,8 @@ public class JniClassLoader  {
                         final Processor processor = Processor.class.cast(configurableComponent);
                         if (processor != null) {
                             List<PropertyDescriptor> descriptors = processor.getPropertyDescriptors();
-                            components.add(JniComponent.JniComponentBuilder.create(processor.getClass().getCanonicalName()).addProperties(descriptors).addRelationships(processor.getRelationships()).build());
-
+                            final String description = getDescription(processor.getClass());
+                            components.add(JniComponent.JniComponentBuilder.create(processor.getClass().getCanonicalName()).addProperties(descriptors).addDescription(description).addRelationships(processor.getRelationships()).build());
                         }
 
                 }
@@ -139,6 +140,13 @@ public class JniClassLoader  {
 
             }
             return components;
+    }
+    /**
+     * Gets the description from the specified class.
+     */
+    private static String getDescription(final Class<?> cls) {
+        final CapabilityDescription capabilityDesc = cls.getAnnotation(CapabilityDescription.class);
+        return capabilityDesc == null ? "" : capabilityDesc.value();
     }
 
     private static void initializeTempComponent(final ConfigurableComponent configurableComponent) {

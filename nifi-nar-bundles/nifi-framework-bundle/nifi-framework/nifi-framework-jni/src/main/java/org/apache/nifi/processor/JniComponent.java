@@ -26,6 +26,10 @@ public class JniComponent {
         return type;
     }
 
+    public String getDescription(){
+        return description;
+    }
+
     public List<PropertyDescriptor> getDescriptors(){
         return Collections.unmodifiableList(descriptorsList);
     }
@@ -85,6 +89,10 @@ public class JniComponent {
         }
 
 
+        public JniComponentBuilder addDescription(String description) {
+            component.description = description;
+            return this;
+        }
 
        private JniComponentBuilder(final String type){
         component = new JniComponent(type);

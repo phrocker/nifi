@@ -157,7 +157,6 @@ public class JniUnpacker {
             final File[] docsFiles = docsWorkingDir.listFiles();
             if (docsFiles != null) {
                 for (final File file : docsFiles) {
-                    System.out.println("Delete2 " + file);
                     FileUtils.deleteFile(file, true);
                 }
             }
