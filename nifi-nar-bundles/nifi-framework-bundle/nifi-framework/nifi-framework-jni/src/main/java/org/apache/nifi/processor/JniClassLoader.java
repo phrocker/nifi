@@ -145,7 +145,7 @@ public class JniClassLoader  {
 
                 }
                 }catch(Throwable e){
-                    logger.info("Ignoring ");
+                    logger.info("Ignoring ",e);
                 }
 
 
@@ -199,7 +199,60 @@ public class JniClassLoader  {
 
 
     public String getMethod(final String className, final String annotation){
-        return onScheduledMethod.get(new AbstractMap.SimpleImmutableEntry<>(className,annotation)).toString();
+        Method mthd = onScheduledMethod.get(new AbstractMap.SimpleImmutableEntry<>(className,annotation));
+
+        return mthd.getName();
+    }
+
+    public String getSignature(final String className, final String annotation){
+        Method mthd = onScheduledMethod.get(new AbstractMap.SimpleImmutableEntry<>(className,annotation));
+        String ret = "", argTypes="";
+        if (mthd.getReturnType().equals(Void.TYPE)){
+            ret = "V";
+        }
+        else{
+            ret = classToType(mthd.getReturnType());
+        }
+        argTypes = "(";
+        for(Class<?> type : mthd.getParameterTypes()){
+            argTypes += classToType(type);
+        }
+
+        argTypes += ")";
+
+        return argTypes + ret;
+    }
+
+    private static String classToType(Class<?> type){
+        if (type.equals(Integer.TYPE)){
+            return "I";
+        } else if (type.equals(Boolean.TYPE)) {
+            return "Z";
+        }
+        else if (type.equals(Byte.TYPE)) {
+            return "B";
+        }
+        else if (type.equals(Character.TYPE)) {
+            return "C";
+        }
+        else if (type.equals(Short.TYPE)) {
+            return "S";
+        }
+        else if (type.equals(Long.TYPE)) {
+            return "J";
+        }
+        else if (type.equals(Boolean.TYPE)) {
+            return "Z";
+        }
+        else{
+            return "L" + type.getCanonicalName().replace(".","/") + ";";
+        }
+
+
+
+
+
+
     }
 
     public Object createObject(final String className) throws IllegalAccessException, InstantiationException, ClassNotFoundException {

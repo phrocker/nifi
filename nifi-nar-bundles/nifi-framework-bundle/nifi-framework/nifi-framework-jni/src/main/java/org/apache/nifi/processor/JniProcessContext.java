@@ -1,6 +1,7 @@
 package org.apache.nifi.processor;
 
 import org.apache.nifi.attribute.expression.language.StandardPropertyValue;
+import org.apache.nifi.components.AbstractConfigurableComponent;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.PropertyValue;
 import org.apache.nifi.components.state.StateManager;
@@ -8,8 +9,10 @@ import org.apache.nifi.controller.ControllerService;
 import org.apache.nifi.controller.ControllerServiceLookup;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class JniProcessContext implements ProcessContext, ControllerServiceLookup {
 
@@ -79,11 +82,27 @@ public class JniProcessContext implements ProcessContext, ControllerServiceLooku
 
     @Override
     public Map<PropertyDescriptor, String> getProperties() {
-        Map<PropertyDescriptor, String> props = new HashMap<>();
+        List<String> propertyNames = getPropertyNames();
+        Processor processor = getProcessor();
+        System.out.println("get properties");
+        if (processor instanceof AbstractConfigurableComponent) {
+            System.out.println("get AbstractConfigurableComponent");
+            AbstractConfigurableComponent process = AbstractConfigurableComponent.class.cast(getProcessor());
+            if (process != null) {
+                System.out.println("propertyNames is " + getPropertyNames() );
+                for(Map.Entry<PropertyDescriptor,String> desc : propertyNames.stream().collect(Collectors.toMap(process::getPropertyDescriptor, this::getPropertyValue)).entrySet()){
+    System.out.println("got " + desc + " " + desc.getKey().isDynamic());
+                }
+                return propertyNames.stream().collect(Collectors.toMap(process::getPropertyDescriptor, this::getPropertyValue));
+            }
+        }
 
-        return props;
-        //return null;
+        return null;
     }
+
+    private native List<String> getPropertyNames();
+
+    private native Processor getProcessor();
 
     @Override
     public String encrypt(String unencrypted) {

@@ -157,7 +157,11 @@ public class JniProcessSession implements ProcessSession {
 
     @Override
     public void read(FlowFile source, InputStreamCallback reader) throws FlowFileAccessException {
-
+        try {
+            reader.process(new ByteArrayInputStream(readFlowFile(source)));
+        } catch (IOException e) {
+            throw new FlowFileAccessException("Could not read from native source", e);
+        }
     }
 
     @Override
