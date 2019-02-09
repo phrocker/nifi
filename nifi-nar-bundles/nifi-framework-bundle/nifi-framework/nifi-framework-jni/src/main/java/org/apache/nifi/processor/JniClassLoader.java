@@ -63,7 +63,6 @@ public class JniClassLoader  {
 
         this.parent = parent;
         List<File> paths = new ArrayList<>();
-        System.out.println("dir is " + narWriteBase);
         File narDeploy = new File(narWriteBase);
         ExtensionMapping mapping = JniUnpacker.unpackNars(new File(narDirectory),narDeploy,new File(docsDir), paths);
 
@@ -95,7 +94,6 @@ public class JniClassLoader  {
                 try {
                     final NarClassLoader loader = new NarClassLoader(path, parent);
                     loaderMap.put(entry.getKey(),loader);
-                    System.out.println("Adding no dep loader for " + entry.getKey());
 
                     List<JniComponent> components = discoverExtensions(new Bundle(entry.getValue(), loader));
 
@@ -113,7 +111,6 @@ public class JniClassLoader  {
             }
         });
 
-        System.out.println("Now have " + componentMap.size() + " components");
 
         bundleMap.entrySet().stream().filter((e) ->{
             return e.getValue().getDependencyCoordinate() != null;
@@ -123,11 +120,7 @@ public class JniClassLoader  {
                 try {
                     ClassLoader parentLoader = loaderMap.get(entry.getValue().getDependencyCoordinate().getId());
                     if (parentLoader == null) {
-                        System.out.println("could not find " + entry.getValue().getDependencyCoordinate().getId());
                         parentLoader = parent;
-                    }
-                    else{
-                        System.out.println("Adding dep loader for " + entry.getKey() + " referencing " + entry.getValue().getDependencyCoordinate().getId());
                     }
                         final NarClassLoader loader = new NarClassLoader(path, parentLoader);
                         loaderMap.put(entry.getKey(), loader);
@@ -147,32 +140,6 @@ public class JniClassLoader  {
                 }
             }
         });
-
-        System.out.println("Now have " + componentMap.size() + " components");
-
-/*
-        for(File narPath : directories) {
-            System.out.println("dir is " + narPath + " " + mapping.getProcessorNames().size());
-            // get the property descriptors
-
-
-            if (loader == null) {
-                loader = new NarClassLoader(narPath, parent);
-            }
-            else{
-                loader = new NarClassLoader(narPath, loader);
-            }
-
-            List<JniComponent> components = discoverExtensions(new Bundle(details, loader));
-
-            componentMap.putAll(
-                    components.stream().collect(Collectors.toMap(JniComponent::getType, jniComponent -> jniComponent)));
-
-
-            bundles.add(new JniBundle(details, components));
-
-        }
-        */
     }
 
     public Class getClass(final String className) throws ClassNotFoundException {

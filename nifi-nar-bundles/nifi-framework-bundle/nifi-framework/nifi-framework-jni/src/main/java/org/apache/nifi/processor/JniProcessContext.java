@@ -51,8 +51,6 @@ public class JniProcessContext implements ProcessContext, ControllerServiceLooku
     @Override
     public PropertyValue getProperty(String propertyName) {
         String value = getPropertyValue(propertyName);
-        System.out.println("Get property for " + propertyName + " " + value);
-
         return new StandardPropertyValue(value,this);
     }
 
@@ -84,15 +82,9 @@ public class JniProcessContext implements ProcessContext, ControllerServiceLooku
     public Map<PropertyDescriptor, String> getProperties() {
         List<String> propertyNames = getPropertyNames();
         Processor processor = getProcessor();
-        System.out.println("get properties");
         if (processor instanceof AbstractConfigurableComponent) {
-            System.out.println("get AbstractConfigurableComponent");
             AbstractConfigurableComponent process = AbstractConfigurableComponent.class.cast(getProcessor());
             if (process != null) {
-                System.out.println("propertyNames is " + getPropertyNames() );
-                for(Map.Entry<PropertyDescriptor,String> desc : propertyNames.stream().collect(Collectors.toMap(process::getPropertyDescriptor, this::getPropertyValue)).entrySet()){
-    System.out.println("got " + desc + " " + desc.getKey().isDynamic());
-                }
                 return propertyNames.stream().collect(Collectors.toMap(process::getPropertyDescriptor, this::getPropertyValue));
             }
         }
@@ -157,10 +149,8 @@ public class JniProcessContext implements ProcessContext, ControllerServiceLooku
     @Override
     public PropertyValue getProperty(PropertyDescriptor descriptor) {
         String value = getPropertyValue(descriptor.getName());
-        System.out.println("Get property for " + descriptor.getName() + " " + value);
         if (value == null || "null".equals(value))
             value = descriptor.getDefaultValue();
-        System.out.println("Get property for " + descriptor.getName() + " " + value);
         return new StandardPropertyValue(value,this);
     }
 

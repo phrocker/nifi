@@ -131,37 +131,6 @@ public class JniUnpacker {
                     }
                 }
 
-                // ensure we've found the framework nar
-/*                if (unpackedFramework == null) {
-                    throw new IllegalStateException("No framework NAR found.");
-                } else if (!unpackedFramework.canRead()) {
-                    throw new IllegalStateException("Framework NAR cannot be read.");
-                }
-*/
-                // Determine if any nars no longer exist and delete their working directories. This happens
-                // if a new version of a nar is dropped into the lib dir. ensure no old framework are present
-                /*
-                final File[] frameworkWorkingDirContents = unpackDirectory.listFiles();
-                if (frameworkWorkingDirContents != null) {
-                    for (final File unpackedNar : frameworkWorkingDirContents) {
-                        if (!unpackedFramework.equals(unpackedNar)) {
-                            System.out.println("Delete1 " + unpackedNar);
-                            FileUtils.deleteFile(unpackedNar, true);
-                        }
-                    }
-                }
-
-                // ensure no old extensions are present
-                final File[] extensionsWorkingDirContents = unpackDirectory.listFiles();
-                if (extensionsWorkingDirContents != null) {
-                    for (final File unpackedNar : extensionsWorkingDirContents) {
-                        if (!unpackedExtensions.contains(unpackedNar)) {
-                            System.out.println("Delete3 " + unpackedNar);
-                            FileUtils.deleteFile(unpackedNar, true);
-                        }
-                    }
-                }
-*/
                 final long duration = System.nanoTime() - startTime;
                 logger.info("NAR loading process took " + duration + " nanoseconds "
                         + "(" + (int) TimeUnit.SECONDS.convert(duration, TimeUnit.NANOSECONDS) + " seconds).");
