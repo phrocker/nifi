@@ -12,6 +12,7 @@ public class JniComponent {
     private Set<Relationship> relationships;
     private boolean dynamicProperties;
     private boolean dynamicRelationships;
+    private boolean isControllerService;
 
     private JniComponent(final String type){
         this.type = type;
@@ -19,6 +20,7 @@ public class JniComponent {
         this.relationships = new HashSet<>();
         this.dynamicProperties = false;
         this.dynamicRelationships = false;
+        isControllerService = false;
     }
 
 
@@ -29,6 +31,8 @@ public class JniComponent {
     public String getDescription(){
         return description;
     }
+
+    public boolean isControllerService() { return isControllerService; }
 
     public List<PropertyDescriptor> getDescriptors(){
         return Collections.unmodifiableList(descriptorsList);
@@ -81,6 +85,11 @@ public class JniComponent {
 
         public JniComponentBuilder setDynamicRelationships(){
             component.dynamicRelationships = true;
+            return this;
+        }
+
+        public JniComponentBuilder setIsControllerService(){
+            component.isControllerService = true;
             return this;
         }
 

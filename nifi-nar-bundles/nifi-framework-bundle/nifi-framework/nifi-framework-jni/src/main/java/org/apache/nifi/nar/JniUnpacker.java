@@ -41,6 +41,10 @@ public class JniUnpacker {
 
     private static final Logger logger = LoggerFactory.getLogger(JniUnpacker.class);
     private static String HASH_FILENAME = "nar-md5sum";
+
+    private static final Map<String,File> narMaps = new HashMap<>();
+    private static final Map<String,String> narDependencies = new HashMap<>();
+
     private static final FileFilter NAR_FILTER = new FileFilter() {
         @Override
         public boolean accept(File pathname) {
@@ -49,6 +53,14 @@ public class JniUnpacker {
         }
     };
 
+
+    public static Optional<String> getDependency(final String narId){
+        return Optional.of( narDependencies.get(narId) );
+    }
+
+    public static Optional<File> getDirectory(final String narId){
+        return Optional.of( narMaps.get(narId) );
+    }
 
     public static ExtensionMapping unpackNars(final File narFilesDir, final File unpackDirectory, final File docsWorkingDir, List<File> paths ) throws IOException {
         final List<Path> narLibraryDirs = new ArrayList<>();
@@ -95,7 +107,10 @@ public class JniUnpacker {
                         final String groupId = attributes.getValue(NarManifestEntry.NAR_GROUP.getManifestName());
                         final String narId = attributes.getValue(NarManifestEntry.NAR_ID.getManifestName());
                         final String version = attributes.getValue(NarManifestEntry.NAR_VERSION.getManifestName());
-
+                        final String dependencyId = attributes.getValue(NarManifestEntry.NAR_DEPENDENCY_ID.getManifestName());
+                        logger.debug("Expanding NAR file: " + nar.getName() + " has dependency " + dependencyId);
+                        narMaps.put(narId,narFilesDir);
+                        narDependencies.put(narId,dependencyId);
                         // determine if this is the framework
                         if (NarClassLoaders.FRAMEWORK_NAR_ID.equals(narId)) {
                             if (unpackedFramework != null) {

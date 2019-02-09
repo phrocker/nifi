@@ -8,6 +8,7 @@ import org.apache.nifi.bundle.Bundle;
 import org.apache.nifi.bundle.BundleDetails;
 import org.apache.nifi.components.ConfigurableComponent;
 import org.apache.nifi.components.PropertyDescriptor;
+import org.apache.nifi.controller.ControllerService;
 import org.apache.nifi.init.ConfigurableComponentInitializer;
 import org.apache.nifi.init.ConfigurableComponentInitializerFactory;
 import org.apache.nifi.nar.ExtensionMapping;
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -34,9 +36,11 @@ public class JniClassLoader  {
 
     private long nativePtr;
 
-    private NarClassLoader loader;
+    //private NarClassLoader loader = null;
 
-    private ConcurrentHashMap<String,Class<?>> classes = new ConcurrentHashMap<>();
+    private ClassLoader parent= null;
+
+    private static ConcurrentHashMap<String,Class<?>> classes = new ConcurrentHashMap<>();
 
     private ConcurrentHashMap<Map.Entry<String,String>,Method> onScheduledMethod = new ConcurrentHashMap<>();
 
@@ -44,41 +48,139 @@ public class JniClassLoader  {
 
     private List<JniBundle> bundles = new ArrayList<>();
 
+    private ConcurrentHashMap<String, BundleDetails> bundleMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, File> fileMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, NarClassLoader> loaderMap = new ConcurrentHashMap<>();
+
     public JniClassLoader(){
 
     }
 
-    public void setNarLocation(final String narDirectory,final String narWriteBase,final String docsDir, ClassLoader parent) throws IOException, ClassNotFoundException{
+    public void initializeNarDirectory(final String narDirectory,final String narWriteBase,final String docsDir, ClassLoader parent) throws IOException, ClassNotFoundException{
         // unpack the nar
+        if (this.parent != null)
+            throw new IllegalArgumentException("Already initialized");
+
+        this.parent = parent;
         List<File> paths = new ArrayList<>();
         System.out.println("dir is " + narWriteBase);
-        ExtensionMapping mapping = JniUnpacker.unpackNars(new File(narDirectory),new File(narWriteBase),new File(docsDir), paths);
+        File narDeploy = new File(narWriteBase);
+        ExtensionMapping mapping = JniUnpacker.unpackNars(new File(narDirectory),narDeploy,new File(docsDir), paths);
 
-        String narPath = narWriteBase + "/nifi-standard-nar-1.8.0.nar-unpacked/";
-        System.out.println("dir is " + narPath + " " + mapping.getProcessorNames().size());
-        setClassDir(narPath,parent);
-        // get the property descriptors
-        final BundleDetails details = NarBundleUtil.fromNarDirectory(new File(narPath));
+        List<File> directories = Arrays.asList(narDeploy.listFiles(File::isDirectory));
+        directories.sort((file, t1) -> {
+            try {
+                if (file.getCanonicalPath().contains("standard"))
+                return 1;
+                else{
+                    return file.compareTo(t1);
+                }
+            } catch (IOException e) {
+                logger.warn("error while comparing files",e);
+            }
+            return file.compareTo(t1);
+        });
 
-        List<JniComponent> components = discoverExtensions(new Bundle(details, loader));
-
-        componentMap.putAll(
-                components.stream().collect(Collectors.toMap(JniComponent::getType,jniComponent -> jniComponent)));
-
-        for(JniComponent component : components){
-            System.out.println("for " + component.getType() + " we have " + component.getDescriptors().size());
-
+        for(File narPath : directories) {
+            final BundleDetails details = NarBundleUtil.fromNarDirectory(narPath);
+            bundleMap.put(details.getCoordinate().getId(), details );
+            fileMap.put(details.getCoordinate().getId(), narPath);
         }
 
-        bundles.add(new JniBundle(details,components));
-    }
+        bundleMap.entrySet().stream().filter((e) ->{
+            return e.getValue().getDependencyCoordinate() == null;
+        }).collect(Collectors.toList()).forEach( entry ->{
+            File path = fileMap.get(entry.getKey());
+            if (path != null) {
+                try {
+                    final NarClassLoader loader = new NarClassLoader(path, parent);
+                    loaderMap.put(entry.getKey(),loader);
+                    System.out.println("Adding no dep loader for " + entry.getKey());
 
-    public void setClassDir(String directory, ClassLoader parent) throws IOException, ClassNotFoundException {
-        loader = new NarClassLoader(new File(directory),parent);
+                    List<JniComponent> components = discoverExtensions(new Bundle(entry.getValue(), loader));
+
+                    componentMap.putAll(
+                            components.stream().collect(Collectors.toMap(JniComponent::getType, jniComponent -> jniComponent)));
+
+
+                    bundles.add(new JniBundle(entry.getValue(), components));
+
+                } catch (ClassNotFoundException e) {
+                    logger.error("Could not create NarClassLoader",e);
+                } catch (IOException e) {
+                    logger.error("Could not create NarClassLoader",e);
+                }
+            }
+        });
+
+        System.out.println("Now have " + componentMap.size() + " components");
+
+        bundleMap.entrySet().stream().filter((e) ->{
+            return e.getValue().getDependencyCoordinate() != null;
+        }).collect(Collectors.toList()).forEach(entry ->{
+            File path = fileMap.get(entry.getKey());
+            if (path != null) {
+                try {
+                    ClassLoader parentLoader = loaderMap.get(entry.getValue().getDependencyCoordinate().getId());
+                    if (parentLoader == null) {
+                        System.out.println("could not find " + entry.getValue().getDependencyCoordinate().getId());
+                        parentLoader = parent;
+                    }
+                    else{
+                        System.out.println("Adding dep loader for " + entry.getKey() + " referencing " + entry.getValue().getDependencyCoordinate().getId());
+                    }
+                        final NarClassLoader loader = new NarClassLoader(path, parentLoader);
+                        loaderMap.put(entry.getKey(), loader);
+
+                        List<JniComponent> components = discoverExtensions(new Bundle(entry.getValue(), loader));
+
+                        componentMap.putAll(
+                                components.stream().collect(Collectors.toMap(JniComponent::getType, jniComponent -> jniComponent)));
+
+
+                        bundles.add(new JniBundle(entry.getValue(), components));
+
+                } catch (ClassNotFoundException e) {
+                    logger.error("Could not create NarClassLoader",e);
+                } catch (IOException e) {
+                    logger.error("Could not create NarClassLoader",e);
+                }
+            }
+        });
+
+        System.out.println("Now have " + componentMap.size() + " components");
+
+/*
+        for(File narPath : directories) {
+            System.out.println("dir is " + narPath + " " + mapping.getProcessorNames().size());
+            // get the property descriptors
+
+
+            if (loader == null) {
+                loader = new NarClassLoader(narPath, parent);
+            }
+            else{
+                loader = new NarClassLoader(narPath, loader);
+            }
+
+            List<JniComponent> components = discoverExtensions(new Bundle(details, loader));
+
+            componentMap.putAll(
+                    components.stream().collect(Collectors.toMap(JniComponent::getType, jniComponent -> jniComponent)));
+
+
+            bundles.add(new JniBundle(details, components));
+
+        }
+        */
     }
 
     public Class getClass(final String className) throws ClassNotFoundException {
-        return loader.loadClass(className);
+        Class clazz = classes.get(className);
+        if (clazz == null){
+            clazz = parent.loadClass(className);
+        }
+        return clazz;
     }
 
     public List<JniBundle> getBundles(){
@@ -117,7 +219,7 @@ public class JniClassLoader  {
     @SuppressWarnings("unchecked")
     private static List<JniComponent> loadProcessors(final Bundle bundle) {
         List<JniComponent> components = new ArrayList<>();
-        final ServiceLoader<?> serviceLoader = ServiceLoader.load(Processor.class, bundle.getClassLoader());
+        ServiceLoader<?> serviceLoader = ServiceLoader.load(Processor.class, bundle.getClassLoader());
         Iterator<?> sli = serviceLoader.iterator();
             while(sli.hasNext()){
                 try {
@@ -127,22 +229,24 @@ public class JniClassLoader  {
 
                         final ConfigurableComponent configurableComponent = (ConfigurableComponent) o;
                         initializeTempComponent(configurableComponent);
-                        final Processor processor = Processor.class.cast(configurableComponent);
-                        if (processor != null) {
-                            List<PropertyDescriptor> descriptors = processor.getPropertyDescriptors();
-                            final String description = getDescription(processor.getClass());
-                            final DynamicProperty dynProperty = getDynamicPropertyAnnotation(processor.getClass());
-                            final DynamicRelationship dynRelationShip = getDynamicRelationshipAnnotation(processor.getClass());
-                            JniComponent.JniComponentBuilder builder = JniComponent.JniComponentBuilder.create(processor.getClass().getCanonicalName()).addProperties(descriptors).addDescription(description).addRelationships(processor.getRelationships());
-                            if (dynProperty != null){
-                                builder.setDynamicProperties();
+                        if (configurableComponent instanceof Processor ) {
+                            final Processor processor = Processor.class.cast(configurableComponent);
+                            if (processor != null) {
+                                List<PropertyDescriptor> descriptors = processor.getPropertyDescriptors();
+                                final String description = getDescription(processor.getClass());
+                                classes.put(processor.getClass().getCanonicalName(),processor.getClass());
+                                final DynamicProperty dynProperty = getDynamicPropertyAnnotation(processor.getClass());
+                                final DynamicRelationship dynRelationShip = getDynamicRelationshipAnnotation(processor.getClass());
+                                JniComponent.JniComponentBuilder builder = JniComponent.JniComponentBuilder.create(processor.getClass().getCanonicalName()).addProperties(descriptors).addDescription(description).addRelationships(processor.getRelationships());
+                                if (dynProperty != null) {
+                                    builder.setDynamicProperties();
+                                }
+                                if (dynRelationShip != null) {
+                                    builder.setDynamicRelationships();
+                                }
+                                components.add(builder.build());
                             }
-                            if (dynRelationShip != null){
-                                builder.setDynamicRelationships();
-                            }
-                            components.add(builder.build());
                         }
-
                 }
                 }catch(Throwable e){
                     logger.info("Ignoring ",e);
@@ -150,6 +254,44 @@ public class JniClassLoader  {
 
 
             }
+
+        serviceLoader = ServiceLoader.load(ControllerService.class, bundle.getClassLoader());
+        sli = serviceLoader.iterator();
+        while(sli.hasNext()){
+            try {
+                Object o = sli.next();
+                // create a cache of temp ConfigurableComponent instances, the initialize here has to happen before the checks below
+                if (o instanceof ConfigurableComponent) {
+
+                    final ConfigurableComponent configurableComponent = (ConfigurableComponent) o;
+                    initializeTempComponent(configurableComponent);
+                    if (configurableComponent instanceof ControllerService) {
+                        final ControllerService cs = ControllerService.class.cast(configurableComponent);
+                        if (cs != null) {
+                            List<PropertyDescriptor> descriptors = cs.getPropertyDescriptors();
+                            final String description = getDescription(cs.getClass());
+                            final DynamicProperty dynProperty = getDynamicPropertyAnnotation(cs.getClass());
+                            final DynamicRelationship dynRelationShip = getDynamicRelationshipAnnotation(cs.getClass());
+                            classes.put(cs.getClass().getCanonicalName(),cs.getClass());
+                            JniComponent.JniComponentBuilder builder = JniComponent.JniComponentBuilder.create(cs.getClass().getCanonicalName()).addProperties(descriptors).addDescription(description).setIsControllerService();
+                            if (dynProperty != null) {
+                                builder.setDynamicProperties();
+                            }
+                            if (dynRelationShip != null) {
+                                builder.setDynamicRelationships();
+                            }
+                            components.add(builder.build());
+                        }
+
+                    }
+
+                }
+            }catch(Throwable e){
+                logger.info("Ignoring ",e);
+            }
+
+
+        }
             return components;
     }
     /**
@@ -257,13 +399,13 @@ public class JniClassLoader  {
 
     public Object createObject(final String className) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
         Class clazz = classes.get(className);
-        if (null == clazz){
-            logger.debug("Looking for {}", className);
-            clazz = loader.loadClass(className);
-            classes.put(className,clazz);
+        if (clazz == null){
+            clazz = parent.loadClass(className);
         }
+
         if (clazz == null){
             logger.warn("Could not find {}", className);
+            return null;
        }
         else{
             List<Method> methods = getAnnotatedMethods(clazz, OnScheduled.class);
