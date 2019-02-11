@@ -5,6 +5,7 @@ import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.logging.LogLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.helpers.MessageFormatter;
 
 public class JniComponentLogger implements ComponentLog {
 
@@ -23,7 +24,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void warn(String msg, Throwable t) {
         if (jniLogger != null){
-            warn(msg + " : " + t.getMessage());
+            jniLogger.warn(MessageFormatter.format(msg,t).getMessage());
         }
         else {
             logger.warn(msg, t);
@@ -33,7 +34,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void warn(String msg, Object[] os) {
         if (jniLogger != null){
-            warn(msg + " : " + Joiner.on(",").join(os));
+            jniLogger.warn(MessageFormatter.arrayFormat(msg,os).getMessage());
         }
         else {
             logger.warn(msg, os);
@@ -43,8 +44,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void warn(String msg, Object[] os, Throwable t) {
         if (jniLogger != null){
-            warn(msg + " : " + Joiner.on(",").join(os));
-            warn(t.getMessage());
+            jniLogger.warn(MessageFormatter.arrayFormat(msg,os,t).getMessage());
         }
         else {
             logger.warn(msg, os);
@@ -65,7 +65,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void trace(String msg, Throwable t) {
         if (jniLogger != null){
-            trace(msg + " : " + t.getMessage());
+            jniLogger.trace(MessageFormatter.format(msg,t).getMessage());
         }
         else {
             logger.trace(msg, t);
@@ -75,7 +75,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void trace(String msg, Object[] os) {
         if (jniLogger != null){
-            trace(msg + " : " + Joiner.on(",").join(os));
+            jniLogger.trace(MessageFormatter.arrayFormat(msg,os).getMessage());
         }
         else {
             logger.trace(msg, os);
@@ -95,8 +95,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void trace(String msg, Object[] os, Throwable t) {
         if (jniLogger != null){
-            trace(msg + " : " + Joiner.on(",").join(os));
-            trace(t.getMessage());
+            jniLogger.trace(MessageFormatter.arrayFormat(msg,os,t).getMessage());
         }
         else {
             logger.trace(msg, os);
@@ -142,7 +141,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void info(String msg, Throwable t) {
         if (jniLogger != null){
-            info(msg + " : " + t.getMessage());
+            jniLogger.info(MessageFormatter.format(msg,t).getMessage());
         }
         else {
             logger.info(msg, t);
@@ -152,7 +151,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void info(String msg, Object[] os) {
         if (jniLogger != null){
-            info(msg + " : " + Joiner.on(",").join(os));
+            jniLogger.info(MessageFormatter.arrayFormat(msg,os).getMessage());
         }
         else {
             logger.info(msg, os);
@@ -172,8 +171,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void info(String msg, Object[] os, Throwable t) {
         if (jniLogger != null){
-            info(msg + " : " + Joiner.on(",").join(os));
-            info(t.getMessage());
+            jniLogger.info(MessageFormatter.format(msg,os,t).getMessage());
         }
         else {
             logger.info(msg, os);
@@ -188,7 +186,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void error(String msg, Throwable t) {
         if (jniLogger != null){
-            error(msg + " : " + t.getMessage());
+            jniLogger.info(MessageFormatter.format(msg,t).getMessage());
         }
         else {
             logger.error(msg, t);
@@ -198,7 +196,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void error(String msg, Object[] os) {
         if (jniLogger != null){
-            error(msg + " : " + Joiner.on(",").join(os));
+            jniLogger.error(MessageFormatter.arrayFormat(msg,os).getMessage());
         }
         else {
             logger.error(msg, os);
@@ -218,8 +216,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void error(String msg, Object[] os, Throwable t) {
         if (jniLogger != null){
-            error(msg + " : " + Joiner.on(",").join(os));
-            error(t.getMessage());
+            jniLogger.error(MessageFormatter.arrayFormat(msg,os).getMessage());
         }
         else {
             logger.error(msg, os);
@@ -230,7 +227,8 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void debug(String msg, Throwable t) {
         if (jniLogger != null){
-            debug(msg + " : " + t.getMessage());
+            jniLogger.debug(MessageFormatter.format(msg,t).getMessage());
+
         }
         else {
             logger.debug(msg, t);
@@ -240,7 +238,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void debug(String msg, Object[] os) {
         if (jniLogger != null){
-            debug(msg + " : " + Joiner.on(",").join(os));
+            jniLogger.debug(MessageFormatter.arrayFormat(msg,os).getMessage());
         }
         else {
             logger.debug(msg, os);
@@ -250,8 +248,7 @@ public class JniComponentLogger implements ComponentLog {
     @Override
     public void debug(String msg, Object[] os, Throwable t) {
         if (jniLogger != null){
-            debug(msg + " : " + Joiner.on(",").join(os));
-            debug(t.getMessage());
+            jniLogger.debug(MessageFormatter.arrayFormat(msg,os,t).getMessage());
         }
         else {
             logger.debug(msg, os);
