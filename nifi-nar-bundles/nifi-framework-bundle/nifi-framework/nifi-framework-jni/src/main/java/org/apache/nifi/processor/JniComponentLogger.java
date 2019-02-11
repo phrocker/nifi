@@ -1,5 +1,6 @@
 package org.apache.nifi.processor;
 
+import com.google.common.base.Joiner;
 import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.logging.LogLevel;
 import org.slf4j.Logger;
@@ -10,98 +11,173 @@ public class JniComponentLogger implements ComponentLog {
     private static final Logger logger = LoggerFactory
             .getLogger(JniComponentLogger.class);
 
-    public JniComponentLogger(){
+    private JniLogger jniLogger = null;
 
+    public JniComponentLogger(JniLogger logger){
+        jniLogger = logger;
+        if (null != jniLogger){
+            jniLogger.info("Starting NiFi component logger..");
+        }
     }
 
     @Override
     public void warn(String msg, Throwable t) {
-        logger.warn(msg, t);
+        if (jniLogger != null){
+            warn(msg + " : " + t.getMessage());
+        }
+        else {
+            logger.warn(msg, t);
+        }
     }
 
     @Override
     public void warn(String msg, Object[] os) {
-        logger.warn(msg, os);
+        if (jniLogger != null){
+            warn(msg + " : " + Joiner.on(",").join(os));
+        }
+        else {
+            logger.warn(msg, os);
+        }
     }
 
     @Override
     public void warn(String msg, Object[] os, Throwable t) {
-        logger.warn(msg, os);
-        logger.warn("", t);
+        if (jniLogger != null){
+            warn(msg + " : " + Joiner.on(",").join(os));
+            warn(t.getMessage());
+        }
+        else {
+            logger.warn(msg, os);
+            logger.warn("", t);
+        }
     }
 
     @Override
     public void warn(String msg) {
-        logger.warn(msg);
+        if (jniLogger != null){
+            jniLogger.warn(msg);
+        }
+        else {
+            logger.warn(msg);
+        }
     }
 
     @Override
     public void trace(String msg, Throwable t) {
-        logger.trace(msg, t);
+        if (jniLogger != null){
+            trace(msg + " : " + t.getMessage());
+        }
+        else {
+            logger.trace(msg, t);
+        }
     }
 
     @Override
     public void trace(String msg, Object[] os) {
-        logger.trace(msg, os);
+        if (jniLogger != null){
+            trace(msg + " : " + Joiner.on(",").join(os));
+        }
+        else {
+            logger.trace(msg, os);
+        }
     }
 
     @Override
     public void trace(String msg) {
-        logger.trace(msg);
+        if (jniLogger != null){
+            jniLogger.trace(msg);
+        }
+        else {
+            logger.trace(msg);
+        }
     }
 
     @Override
     public void trace(String msg, Object[] os, Throwable t) {
-        logger.trace(msg, os);
-        logger.trace("", t);
+        if (jniLogger != null){
+            trace(msg + " : " + Joiner.on(",").join(os));
+            trace(t.getMessage());
+        }
+        else {
+            logger.trace(msg, os);
+            logger.trace("", t);
+        }
     }
 
     @Override
     public boolean isWarnEnabled() {
+        if (jniLogger != null)
+            return jniLogger.isWarnEnabled();
         return logger.isWarnEnabled();
     }
 
     @Override
     public boolean isTraceEnabled() {
+        if (jniLogger != null)
+            return jniLogger.isTraceEnabled();
         return logger.isTraceEnabled();
     }
 
     @Override
     public boolean isInfoEnabled() {
+        if (jniLogger != null)
+            return jniLogger.isInfoEnabled();
         return logger.isInfoEnabled();
     }
 
     @Override
     public boolean isErrorEnabled() {
+        if (jniLogger != null)
+            return jniLogger.isErrorEnabled();
         return logger.isErrorEnabled();
     }
 
     @Override
     public boolean isDebugEnabled() {
+        if (jniLogger != null)
+            return jniLogger.isDebugEnabled();
         return logger.isDebugEnabled();
     }
 
     @Override
     public void info(String msg, Throwable t) {
-        logger.info(msg, t);
+        if (jniLogger != null){
+            info(msg + " : " + t.getMessage());
+        }
+        else {
+            logger.info(msg, t);
+        }
     }
 
     @Override
     public void info(String msg, Object[] os) {
-        logger.info(msg, os);
+        if (jniLogger != null){
+            info(msg + " : " + Joiner.on(",").join(os));
+        }
+        else {
+            logger.info(msg, os);
+        }
     }
 
     @Override
     public void info(String msg) {
-        logger.info(msg);
-
+        if (jniLogger != null){
+            jniLogger.info(msg);
+        }
+        else {
+            logger.info(msg);
+        }
     }
 
     @Override
     public void info(String msg, Object[] os, Throwable t) {
-        logger.trace(msg, os);
-        logger.trace("", t);
-
+        if (jniLogger != null){
+            info(msg + " : " + Joiner.on(",").join(os));
+            info(t.getMessage());
+        }
+        else {
+            logger.info(msg, os);
+        }
     }
 
     @Override
@@ -111,44 +187,86 @@ public class JniComponentLogger implements ComponentLog {
 
     @Override
     public void error(String msg, Throwable t) {
-        logger.error(msg, t);
+        if (jniLogger != null){
+            error(msg + " : " + t.getMessage());
+        }
+        else {
+            logger.error(msg, t);
+        }
     }
 
     @Override
     public void error(String msg, Object[] os) {
-        logger.error(msg, os);
+        if (jniLogger != null){
+            error(msg + " : " + Joiner.on(",").join(os));
+        }
+        else {
+            logger.error(msg, os);
+        }
     }
 
     @Override
     public void error(String msg) {
-        logger.error(msg);
+        if (jniLogger != null){
+            jniLogger.error(msg);
+        }
+        else {
+            logger.error(msg);
+        }
     }
 
     @Override
     public void error(String msg, Object[] os, Throwable t) {
-        logger.error(msg, os);
-        logger.error("", t);
+        if (jniLogger != null){
+            error(msg + " : " + Joiner.on(",").join(os));
+            error(t.getMessage());
+        }
+        else {
+            logger.error(msg, os);
+            logger.error("",t.getMessage());
+        }
     }
 
     @Override
     public void debug(String msg, Throwable t) {
-        logger.debug(msg, t);
+        if (jniLogger != null){
+            debug(msg + " : " + t.getMessage());
+        }
+        else {
+            logger.debug(msg, t);
+        }
     }
 
     @Override
     public void debug(String msg, Object[] os) {
-        logger.debug(msg, os);
+        if (jniLogger != null){
+            debug(msg + " : " + Joiner.on(",").join(os));
+        }
+        else {
+            logger.debug(msg, os);
+        }
     }
 
     @Override
     public void debug(String msg, Object[] os, Throwable t) {
-        logger.debug(msg, os);
-        logger.debug("", t);
+        if (jniLogger != null){
+            debug(msg + " : " + Joiner.on(",").join(os));
+            debug(t.getMessage());
+        }
+        else {
+            logger.debug(msg, os);
+            logger.debug("",t.getMessage());
+        }
     }
 
     @Override
     public void debug(String msg) {
-        logger.debug(msg);
+        if (jniLogger != null){
+            jniLogger.debug(msg);
+        }
+        else {
+            logger.debug(msg);
+        }
     }
 
     @Override

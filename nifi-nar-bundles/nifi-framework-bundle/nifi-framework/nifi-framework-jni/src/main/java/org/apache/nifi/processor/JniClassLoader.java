@@ -36,7 +36,6 @@ public class JniClassLoader  {
 
     private long nativePtr;
 
-    //private NarClassLoader loader = null;
 
     private ClassLoader parent= null;
 
@@ -56,6 +55,15 @@ public class JniClassLoader  {
 
     }
 
+    /**
+     * Initializes the nar directory. This is the mainstay of the JNI class loader's initialization.
+     * @param narDirectory directory in which we place our nars
+     * @param narWriteBase the directory to which we will write or explode our NARs
+     * @param docsDir nar document directory
+     * @param parent parent class loader, if there is one
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
     public void initializeNarDirectory(final String narDirectory,final String narWriteBase,final String docsDir, ClassLoader parent) throws IOException, ClassNotFoundException{
         // unpack the nar
         if (this.parent != null)
@@ -85,6 +93,9 @@ public class JniClassLoader  {
             bundleMap.put(details.getCoordinate().getId(), details );
             fileMap.put(details.getCoordinate().getId(), narPath);
         }
+
+        // these two allow us to see load those which do not have dependencies followed by those that do
+        // if a dependency exists within this set then we can chain those class loaders as needed.
 
         bundleMap.entrySet().stream().filter((e) ->{
             return e.getValue().getDependencyCoordinate() == null;

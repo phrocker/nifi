@@ -51,6 +51,7 @@ public class JniProcessContext implements ProcessContext, ControllerServiceLooku
     @Override
     public PropertyValue getProperty(String propertyName) {
         String value = getPropertyValue(propertyName);
+        System.out.println("for " + propertyName + " got " + value);
         return new StandardPropertyValue(value,this);
     }
 

@@ -8,14 +8,26 @@ import java.io.File;
 
 public class JniInitializationContext implements ProcessorInitializationContext {
 
+
+    private long nativePtr;
+
+    JniLogger logger = null;
+
+
     @Override
     public String getIdentifier() {
         return null;
     }
 
+
+    public void setLogger(JniLogger logger){
+        this.logger = logger;
+    }
+
+
     @Override
     public ComponentLog getLogger() {
-        return new JniComponentLogger();
+        return new JniComponentLogger(logger);
     }
 
     @Override
