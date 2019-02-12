@@ -20,19 +20,16 @@ public class JniProcessSession implements ProcessSession {
     private long nativePtr;
 
     @Override
-    public void commit() {
-
-    }
+    public native void commit();
+    @Override
+    public native void rollback();
 
     @Override
-    public void rollback() {
-
+    public void rollback(boolean penalize){
+        rollback();
     }
 
-    @Override
-    public void rollback(boolean penalize) {
 
-    }
 
     @Override
     public void migrate(ProcessSession newOwner, Collection<FlowFile> flowFiles) {
@@ -73,9 +70,11 @@ public class JniProcessSession implements ProcessSession {
     public native FlowFile create();
 
     @Override
-    public FlowFile create(FlowFile parent) {
-        return null;
+    public FlowFile create(FlowFile parent){
+        return createWithParent(parent);
     }
+
+    private native FlowFile createWithParent(FlowFile parent);
 
     @Override
     public FlowFile create(Collection<FlowFile> parents) {

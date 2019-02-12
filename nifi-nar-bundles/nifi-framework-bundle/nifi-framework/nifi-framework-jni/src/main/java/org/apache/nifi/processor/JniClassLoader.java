@@ -64,7 +64,7 @@ public class JniClassLoader  {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public void initializeNarDirectory(final String narDirectory,final String narWriteBase,final String docsDir, ClassLoader parent) throws IOException, ClassNotFoundException{
+    public synchronized void initializeNarDirectory(final String narDirectory,final String narWriteBase,final String docsDir, ClassLoader parent) throws IOException, ClassNotFoundException{
         // unpack the nar
         if (this.parent != null)
             throw new IllegalArgumentException("Already initialized");
@@ -321,11 +321,20 @@ public class JniClassLoader  {
     public String getMethod(final String className, final String annotation){
         Method mthd = onScheduledMethod.get(new AbstractMap.SimpleImmutableEntry<>(className,annotation));
 
+        if (mthd == null)
+        {
+            return null;
+        }
+
         return mthd.getName();
     }
 
     public String getSignature(final String className, final String annotation){
         Method mthd = onScheduledMethod.get(new AbstractMap.SimpleImmutableEntry<>(className,annotation));
+        if (mthd == null)
+        {
+            return null;
+        }
         String ret = "", argTypes="";
         if (mthd.getReturnType().equals(Void.TYPE)){
             ret = "V";
@@ -386,6 +395,7 @@ public class JniClassLoader  {
             return null;
        }
         else{
+            System.out.println("Clazz is " + clazz + " from " + className);
             List<Method> methods = getAnnotatedMethods(clazz, OnScheduled.class);
             methods.stream().forEach(mthd -> onScheduledMethod.put(new AbstractMap.SimpleImmutableEntry<>(className,"OnScheduled"),mthd));
         }
