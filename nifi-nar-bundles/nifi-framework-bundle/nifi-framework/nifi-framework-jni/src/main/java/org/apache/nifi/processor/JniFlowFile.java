@@ -49,4 +49,11 @@ public class JniFlowFile implements FlowFile {
     public int compareTo(FlowFile o) {
         return 0;
     }
+
+    public native String getUUIDStr();
+
+    @Override
+    public String toString(){
+        return getUUIDStr();
+    }
 }
